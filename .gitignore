@@ -30,8 +30,16 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.*.local
+
+# cached images/audio from AI generation
+/public/cache/
+
+# drizzle migrations journal (keep SQL, ignore meta)
+src/db/migrations/meta/
 
 # vercel
 .vercel
