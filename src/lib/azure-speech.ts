@@ -15,20 +15,16 @@ export interface PronunciationScore {
 
 interface AzureWord {
   Word: string;
-  PronunciationAssessment?: {
-    AccuracyScore: number;
-    ErrorType: string;
-  };
+  AccuracyScore?: number;
+  ErrorType?: string;
 }
 
 interface AzureNBest {
   Words?: AzureWord[];
-  PronunciationAssessment?: {
-    AccuracyScore: number;
-    FluencyScore: number;
-    CompletenessScore: number;
-    PronScore: number;
-  };
+  AccuracyScore?: number;
+  FluencyScore?: number;
+  CompletenessScore?: number;
+  PronScore?: number;
 }
 
 interface AzureResponse {
@@ -85,20 +81,19 @@ export async function assessPronunciation(
   }
 
   const best = data.NBest[0];
-  const pa = best.PronunciationAssessment;
 
   const words: WordAssessment[] = (best.Words ?? []).map((w) => ({
     word: w.Word,
-    accuracyScore: w.PronunciationAssessment?.AccuracyScore ?? 0,
-    errorType: (w.PronunciationAssessment?.ErrorType ?? "None") as WordAssessment["errorType"],
+    accuracyScore: w.AccuracyScore ?? 0,
+    errorType: (w.ErrorType ?? "None") as WordAssessment["errorType"],
   }));
 
   return {
     recognizedText: data.DisplayText ?? "",
-    accuracyScore: pa?.AccuracyScore ?? 0,
-    fluencyScore: pa?.FluencyScore ?? 0,
-    completenessScore: pa?.CompletenessScore ?? 0,
-    pronScore: pa?.PronScore ?? 0,
+    accuracyScore: best.AccuracyScore ?? 0,
+    fluencyScore: best.FluencyScore ?? 0,
+    completenessScore: best.CompletenessScore ?? 0,
+    pronScore: best.PronScore ?? 0,
     words,
   };
 }
