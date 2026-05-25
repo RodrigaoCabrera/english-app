@@ -32,6 +32,7 @@ export default function ReadingPage() {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadReadings = useCallback(async () => {
     try {
@@ -90,13 +91,17 @@ export default function ReadingPage() {
   async function handleDelete(id: number) {
     if (!confirm("Delete this reading?")) return;
     setDeletingId(id);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/readings/${id}`, { method: "DELETE" });
       if (res.ok) {
         setAllReadings((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        setDeleteError("Failed to delete reading. Please try again.");
       }
     } catch (error) {
       console.error("Failed to delete reading:", error);
+      setDeleteError("Failed to delete reading. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -141,6 +146,10 @@ export default function ReadingPage() {
 
       {allReadings.length > 0 && filtered.length === 0 && (
         <p className="text-sm text-muted-foreground">No readings at this level.</p>
+      )}
+
+      {deleteError && (
+        <p className="text-sm text-destructive">{deleteError}</p>
       )}
 
       <ul className="space-y-2">

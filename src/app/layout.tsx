@@ -26,9 +26,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/" className="font-semibold text-sm">
                   English App
                 </Link>
-                <Link href="/vocabulary" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Vocabulary
-                </Link>
                 <Link href="/reading" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Reading
                 </Link>
