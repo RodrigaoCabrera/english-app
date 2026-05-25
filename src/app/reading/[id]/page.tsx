@@ -3,7 +3,8 @@ import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { readings, readingAttempts } from "@/db/schema";
-import { ReadingDetailTabs } from "./ReadingDetailTabs";
+import { HoverableText } from "@/components/HoverableText";
+import { ReadingPractice } from "./ReadingPractice";
 import type { CefrLevel } from "@/lib/cefr";
 
 interface Props {
@@ -22,9 +23,11 @@ function markdownToPlainText(md: string): string {
 }
 
 function cefrBadgeClass(level: CefrLevel): string {
-  if (level === "A1" || level === "A2") return "bg-green-900/50 text-green-300";
-  if (level === "B1" || level === "B2") return "bg-blue-900/50 text-blue-300";
-  return "bg-purple-900/50 text-purple-300";
+  if (level === "A1" || level === "A2")
+    return "bg-emerald-900/50 text-emerald-400 border border-emerald-800/50";
+  if (level === "B1" || level === "B2")
+    return "bg-amber-900/40 text-amber-400 border border-amber-800/40";
+  return "bg-violet-900/40 text-violet-400 border border-violet-800/40";
 }
 
 export default async function ReadingDetailPage({ params }: Props) {
@@ -64,32 +67,44 @@ export default async function ReadingDetailPage({ params }: Props) {
   }));
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <article className="max-w-2xl space-y-8">
       <Link
         href="/reading"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <span aria-hidden>←</span>
-        Back to Reading
+        Reading
       </Link>
 
-      <div className="flex items-center gap-3">
+      <header className="space-y-2">
         <span
-          className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${cefrBadgeClass(reading.level as CefrLevel)}`}
+          className={`inline-block text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded ${cefrBadgeClass(reading.level as CefrLevel)}`}
         >
           {reading.level}
         </span>
-        <h1 className="text-xl font-semibold capitalize">{reading.topic}</h1>
+        <h1 className="font-serif text-2xl font-semibold capitalize leading-snug">
+          {reading.topic}
+        </h1>
+      </header>
+
+      <div className="font-serif text-[1.05rem] leading-[1.85] text-foreground/90">
+        <HoverableText
+          markdown={reading.bodyMd}
+          keyWords={reading.wordList}
+          level={reading.level as CefrLevel}
+        />
       </div>
 
-      <ReadingDetailTabs
-        readingId={reading.id}
-        level={reading.level as CefrLevel}
-        bodyMd={reading.bodyMd}
-        keyWords={reading.wordList}
-        referenceText={plainText}
-        pastAttempts={pastAttempts}
-      />
-    </div>
+      <div className="border-t border-border pt-8 space-y-2">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Practice
+        </h2>
+        <ReadingPractice
+          readingId={reading.id}
+          referenceText={plainText}
+          pastAttempts={pastAttempts}
+        />
+      </div>
+    </article>
   );
 }

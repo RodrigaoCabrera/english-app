@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/cefr";
 
 interface Reading {
@@ -17,9 +16,11 @@ interface Reading {
 const LEVEL_KEY = "english-app:level";
 
 function cefrBadgeClass(level: string): string {
-  if (level === "A1" || level === "A2") return "bg-green-900/50 text-green-300";
-  if (level === "B1" || level === "B2") return "bg-blue-900/50 text-blue-300";
-  return "bg-purple-900/50 text-purple-300";
+  if (level === "A1" || level === "A2")
+    return "bg-emerald-900/50 text-emerald-400 border border-emerald-800/50";
+  if (level === "B1" || level === "B2")
+    return "bg-amber-900/40 text-amber-400 border border-amber-800/40";
+  return "bg-violet-900/40 text-violet-400 border border-violet-800/40";
 }
 
 export default function ReadingPage() {
@@ -109,15 +110,20 @@ export default function ReadingPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Reading</h1>
+          <h1 className="font-serif text-2xl font-semibold">Reading</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Generate passages and practice pronunciation.
           </p>
         </div>
-        <Button onClick={openModal}>Generate new</Button>
+        <button
+          onClick={openModal}
+          className="cursor-pointer text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Generate new
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -127,8 +133,8 @@ export default function ReadingPage() {
             onClick={() => setFilterLevel(l)}
             className={`cursor-pointer text-xs px-3 py-1 rounded-full border transition-colors ${
               filterLevel === l
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-border text-muted-foreground hover:text-foreground"
+                ? "bg-primary/15 text-primary border-primary/40"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
             }`}
           >
             {l === "all" ? "All" : l}
@@ -136,12 +142,19 @@ export default function ReadingPage() {
         ))}
       </div>
 
+      {deleteError && (
+        <p className="text-sm text-destructive">{deleteError}</p>
+      )}
+
       {allReadings.length === 0 && (
-        <div className="border rounded-lg p-12 text-center space-y-3">
+        <div className="border border-border/50 rounded-lg p-14 text-center space-y-3">
           <p className="text-muted-foreground text-sm">No readings yet.</p>
-          <Button variant="outline" onClick={openModal}>
+          <button
+            onClick={openModal}
+            className="cursor-pointer text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          >
             Generate your first reading
-          </Button>
+          </button>
         </div>
       )}
 
@@ -149,40 +162,37 @@ export default function ReadingPage() {
         <p className="text-sm text-muted-foreground">No readings at this level.</p>
       )}
 
-      {deleteError && (
-        <p className="text-sm text-destructive">{deleteError}</p>
-      )}
-
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {filtered.map((r) => (
-          <li key={r.id} className="flex items-center gap-2">
+          <li key={r.id} className="group flex items-center gap-2">
             <Link
               href={`/reading/${r.id}`}
-              className="flex-1 flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              className="flex-1 flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 hover:border-border hover:bg-accent/30 transition-all"
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${cefrBadgeClass(r.level)}`}
+                  className={`text-[10px] font-semibold uppercase tracking-widest px-1.5 py-0.5 rounded ${cefrBadgeClass(r.level)}`}
                 >
                   {r.level}
                 </span>
-                <span className="capitalize text-sm font-medium">{r.topic}</span>
+                <span className="capitalize text-sm">{r.topic}</span>
               </div>
               <span className="text-xs text-muted-foreground shrink-0">
-                {new Date(r.createdAt).toLocaleDateString()}
+                {new Date(r.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}
               </span>
             </Link>
+
             {confirmDeleteId === r.id ? (
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => setConfirmDeleteId(null)}
-                  className="cursor-pointer text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="cursor-pointer text-xs px-2.5 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDelete(r.id)}
-                  className="cursor-pointer text-xs px-2 py-1 rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                  className="cursor-pointer text-xs px-2.5 py-1 rounded border border-destructive/60 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                 >
                   Delete
                 </button>
@@ -191,13 +201,13 @@ export default function ReadingPage() {
               <button
                 onClick={() => setConfirmDeleteId(r.id)}
                 disabled={deletingId === r.id}
-                className="cursor-pointer p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                className="cursor-pointer p-2 text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all disabled:opacity-40"
                 aria-label="Delete reading"
               >
                 {deletingId === r.id ? (
-                  <span className="text-xs text-muted-foreground">Deleting…</span>
+                  <span className="text-xs">…</span>
                 ) : (
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 )}
               </button>
             )}
@@ -207,40 +217,42 @@ export default function ReadingPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
         >
-          <div className="bg-background border border-border rounded-xl p-6 w-full max-w-sm space-y-4 shadow-xl">
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm space-y-5 shadow-2xl">
             <div>
-              <h2 className="text-base font-semibold">Generate new reading</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h2 className="font-serif text-lg font-semibold">Generate new reading</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 AI will write a passage tailored to your level.
               </p>
             </div>
-            <form onSubmit={handleGenerate} className="space-y-3">
-              <div>
-                <label className="text-xs font-medium block mb-1.5">Topic</label>
+            <form onSubmit={handleGenerate} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Topic
+                </label>
                 <input
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. travel, technology, food..."
+                  placeholder="travel, technology, food..."
                   disabled={generating}
                   autoFocus
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                 />
               </div>
-              <div>
-                <label className="text-xs font-medium block mb-1.5">CEFR Level</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  CEFR Level
+                </label>
                 <select
                   value={level}
                   onChange={(e) => setLevel(e.target.value as CefrLevel)}
                   disabled={generating}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                 >
                   {CEFR_LEVELS.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
+                    <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
               </div>
@@ -248,22 +260,21 @@ export default function ReadingPage() {
                 <p className="text-xs text-destructive">{generateError}</p>
               )}
               <div className="flex gap-2 pt-1">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={() => setModalOpen(false)}
                   disabled={generating}
-                  className="flex-1"
+                  className="cursor-pointer flex-1 h-9 rounded-md border border-border text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
                   disabled={generating || !topic.trim()}
-                  className="flex-1"
+                  className="cursor-pointer flex-1 h-9 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {generating ? "Generating..." : "Generate"}
-                </Button>
+                  {generating ? "Generating…" : "Generate"}
+                </button>
               </div>
             </form>
           </div>

@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { Recorder } from "@/components/Recorder";
 import { PronunciationFeedback } from "@/components/PronunciationFeedback";
-import { HoverableText } from "@/components/HoverableText";
 import type { PronunciationScore } from "@/services/pronunciation-scorer";
-import type { CefrLevel } from "@/lib/cefr";
 
 export interface PastAttempt {
   id: number;
@@ -20,13 +18,10 @@ export interface PastAttempt {
 interface Props {
   readingId: number;
   referenceText: string;
-  bodyMd: string;
-  keyWords: string[];
-  level: CefrLevel;
   pastAttempts: PastAttempt[];
 }
 
-export function ReadingPractice({ readingId, referenceText, bodyMd, keyWords, level, pastAttempts }: Props) {
+export function ReadingPractice({ readingId, referenceText, pastAttempts }: Props) {
   const [score, setScore] = useState<PronunciationScore | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -47,18 +42,11 @@ export function ReadingPractice({ readingId, referenceText, bodyMd, keyWords, le
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-md border border-border bg-muted/30 p-4">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">
-          Read aloud — hover words to explore
-        </p>
-        <HoverableText markdown={bodyMd} keyWords={keyWords} level={level} />
-      </div>
-
+    <div className="space-y-5">
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {!score && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Record yourself reading the passage above, then click Stop.
           </p>
@@ -80,8 +68,7 @@ export function ReadingPractice({ readingId, referenceText, bodyMd, keyWords, le
             aria-expanded={historyOpen}
             className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            {historyOpen ? "Hide" : "Show"} history ({pastAttempts.length} attempt
-            {pastAttempts.length !== 1 ? "s" : ""})
+            {historyOpen ? "Hide" : "Show"} past attempts ({pastAttempts.length})
           </button>
           {historyOpen && (
             <ul className="mt-3 space-y-1.5">

@@ -61,9 +61,6 @@ export function ReadingDetailTabs({
         {tab === "practice" && (
           <ReadingPractice
             readingId={readingId}
-            bodyMd={bodyMd}
-            keyWords={keyWords}
-            level={level}
             referenceText={referenceText}
             pastAttempts={pastAttempts}
           />

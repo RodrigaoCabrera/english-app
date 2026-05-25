@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Inter } from "next/font/google";
+import { DM_Sans, Lora } from "next/font/google";
 import Link from "next/link";
-import { LevelSelector } from "@/components/LevelSelector";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["400", "500", "600"],
+});
 
-const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  style: ["normal", "italic"],
+  weight: ["400", "500", "600"],
+});
 
 export const metadata: Metadata = {
   title: "English App",
@@ -17,23 +25,30 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("h-full", "antialiased", geist.variable, "font-sans", inter.variable)}>
+    <html lang="en" className={cn("dark h-full antialiased", dmSans.variable, lora.variable)}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <TooltipProvider>
-          <header className="border-b">
-            <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-              <nav className="flex items-center gap-6">
-                <Link href="/" className="font-semibold text-sm">
+          <header className="border-b border-border/60">
+            <div className="max-w-3xl mx-auto px-6 h-13 flex items-center justify-between gap-4">
+              <nav className="flex items-center gap-7">
+                <Link
+                  href="/"
+                  className="font-serif font-medium text-foreground tracking-tight"
+                >
                   English App
                 </Link>
-                <Link href="/reading" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  href="/reading"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Reading
                 </Link>
               </nav>
-              <LevelSelector />
             </div>
           </header>
-          <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">{children}</main>
+          <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-10">
+            {children}
+          </main>
         </TooltipProvider>
       </body>
     </html>

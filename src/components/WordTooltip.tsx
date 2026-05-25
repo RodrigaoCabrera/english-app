@@ -138,7 +138,7 @@ export function WordTooltip({ word, displayWord, level }: Props) {
               </button>
             </div>
             {data.translation && (
-              <p className="text-sm bg-violet-500/10 text-violet-300 rounded px-2 py-1 font-medium">
+              <p className="text-sm bg-primary/10 text-primary rounded px-2 py-1 font-serif italic">
                 {data.translation}
               </p>
             )}
