@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+import Link from "next/link";
 import { db } from "@/db";
-import { readings } from "@/db/schema";
-import { ReadingPractice } from "./ReadingPractice";
+import { readings, readingAttempts } from "@/db/schema";
+import { ReadingDetailTabs } from "./ReadingDetailTabs";
+import type { CefrLevel } from "@/lib/cefr";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -10,43 +12,19 @@ interface Props {
 
 function markdownToPlainText(md: string): string {
   return md
-    .replace(/^#{1,6}\s+/gm, "")  // headings
-    .replace(/\*\*(.+?)\*\*/g, "$1")  // bold
-    .replace(/\*(.+?)\*/g, "$1")  // italic
-    .replace(/\[(.+?)\]\(.+?\)/g, "$1")  // links
-    .replace(/\n{2,}/g, " ")  // paragraph breaks → space
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/\n{2,}/g, " ")
     .replace(/\n/g, " ")
     .trim();
 }
 
-function renderMarkdown(md: string): React.ReactNode[] {
-  const lines = md.split("\n");
-  const nodes: React.ReactNode[] = [];
-  let key = 0;
-
-  for (const line of lines) {
-    const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
-    if (headingMatch) {
-      const level = headingMatch[1].length;
-      const Tag = `h${level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
-      const sizes: Record<number, string> = {
-        1: "text-xl font-bold mt-6 mb-2",
-        2: "text-lg font-bold mt-5 mb-2",
-        3: "text-base font-semibold mt-4 mb-1",
-      };
-      nodes.push(<Tag key={key++} className={sizes[level] ?? "font-semibold mt-3 mb-1"}>{headingMatch[2]}</Tag>);
-    } else if (line.trim() === "") {
-      nodes.push(<div key={key++} className="h-3" />);
-    } else {
-      nodes.push(
-        <p key={key++} className="text-base leading-relaxed">
-          {line.replace(/\*\*(.+?)\*\*/g, "").replace(/\*(.+?)\*/g, "$1")}
-        </p>
-      );
-    }
-  }
-
-  return nodes;
+function cefrBadgeClass(level: CefrLevel): string {
+  if (level === "A1" || level === "A2") return "bg-green-900/50 text-green-300";
+  if (level === "B1" || level === "B2") return "bg-blue-900/50 text-blue-300";
+  return "bg-purple-900/50 text-purple-300";
 }
 
 export default async function ReadingDetailPage({ params }: Props) {
@@ -54,34 +32,64 @@ export default async function ReadingDetailPage({ params }: Props) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) notFound();
 
-  const rows = await db
-    .select()
-    .from(readings)
-    .where(eq(readings.id, numId))
-    .limit(1);
+  const [rows, attempts] = await Promise.all([
+    db.select().from(readings).where(eq(readings.id, numId)).limit(1),
+    db
+      .select({
+        id: readingAttempts.id,
+        score: readingAttempts.score,
+        createdAt: readingAttempts.createdAt,
+      })
+      .from(readingAttempts)
+      .where(eq(readingAttempts.readingId, numId))
+      .orderBy(desc(readingAttempts.createdAt))
+      .limit(5),
+  ]);
 
   if (rows.length === 0) notFound();
 
   const reading = rows[0];
   const plainText = markdownToPlainText(reading.bodyMd);
 
+  const pastAttempts = attempts.map((a) => ({
+    id: a.id,
+    score: a.score
+      ? {
+          accuracyScore: a.score.accuracyScore,
+          fluencyScore: a.score.fluencyScore,
+          completenessScore: a.score.completenessScore,
+        }
+      : null,
+    createdAt: a.createdAt.toISOString(),
+  }));
+
   return (
-    <div className="space-y-10 max-w-2xl">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-semibold uppercase tracking-wide text-xs">{reading.level}</span>
-          <span>·</span>
-          <span className="capitalize">{reading.topic}</span>
-        </div>
+    <div className="space-y-6 max-w-2xl">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/reading" className="hover:text-foreground transition-colors">
+          Reading
+        </Link>
+        <span>/</span>
+        <span className="text-foreground capitalize">{reading.topic}</span>
       </div>
 
-      <div className="border rounded-lg p-6">
-        {renderMarkdown(reading.bodyMd)}
+      <div className="flex items-center gap-3">
+        <span
+          className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${cefrBadgeClass(reading.level as CefrLevel)}`}
+        >
+          {reading.level}
+        </span>
+        <h1 className="text-xl font-semibold capitalize">{reading.topic}</h1>
       </div>
 
-      <div className="border rounded-lg p-6">
-        <ReadingPractice readingId={reading.id} referenceText={plainText} />
-      </div>
+      <ReadingDetailTabs
+        readingId={reading.id}
+        level={reading.level as CefrLevel}
+        bodyMd={reading.bodyMd}
+        keyWords={reading.wordList}
+        referenceText={plainText}
+        pastAttempts={pastAttempts}
+      />
     </div>
   );
 }
