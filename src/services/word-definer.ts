@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { getOpenAI } from "@/lib/openai";
 import { type CefrLevel } from "@/lib/cefr";
+import { fetchWordImageBuffer } from "@/lib/unsplash";
 import { db } from "@/db";
 import { wordsCache } from "@/db/schema";
 import { sha1, findImageByWord, saveImage } from "@/lib/cache";
@@ -33,39 +33,39 @@ async function fetchDefinition(word: string): Promise<{ definition: string; exam
   const data: DictEntry[] = await res.json();
   const entry = data[0];
 
+  // Use the first definition of the first meaning (primary usage).
+  // Only look at subsequent meanings/definitions for a better example.
+  const firstDef = entry.meanings?.[0]?.definitions?.[0];
+  if (!firstDef?.definition) throw new Error(`No definition found for "${word}"`);
+
+  if (firstDef.example) {
+    return { definition: firstDef.definition, example: firstDef.example };
+  }
+
+  // Primary definition has no example — scan remaining definitions for one
   for (const meaning of entry.meanings ?? []) {
     for (const def of meaning.definitions ?? []) {
-      if (def.definition && def.example) {
-        return { definition: def.definition, example: def.example };
+      if (def.example) {
+        return { definition: firstDef.definition, example: def.example };
       }
     }
   }
 
-  const firstDef = entry.meanings?.[0]?.definitions?.[0];
-  if (firstDef?.definition) {
-    return {
-      definition: firstDef.definition,
-      example: `The word "${word}" is commonly used in English.`,
-    };
-  }
-
-  throw new Error(`No definition found for "${word}"`);
+  return {
+    definition: firstDef.definition,
+    example: `The word "${word}" is commonly used in English.`,
+  };
 }
 
 async function fetchTranslation(word: string): Promise<string | null> {
   try {
-    const openai = getOpenAI();
-    const res = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "user",
-          content: `Translate the English word "${word}" to Spanish. Reply with only 1-3 Spanish words, no punctuation, no explanation.`,
-        },
-      ],
-      max_tokens: 20,
-    });
-    return res.choices[0]?.message?.content?.trim() ?? null;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|es`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const translated: string | undefined = data.responseData?.translatedText;
+    if (!translated || translated.toLowerCase() === word.toLowerCase()) return null;
+    return translated;
   } catch {
     return null;
   }
@@ -85,6 +85,35 @@ export async function defineWord(
 
   if (cached.length > 0) {
     const row = cached[0];
+
+    if (!row.imageHash) {
+      let imageUrl: string | null = null;
+      try {
+        const buffer = await fetchWordImageBuffer(normalized);
+        if (buffer) {
+          imageUrl = await saveImage(normalized, normalized, buffer);
+        }
+      } catch {
+        // non-fatal
+      }
+
+      if (imageUrl) {
+        const imageHash = sha1(normalized);
+        await db
+          .update(wordsCache)
+          .set({ imageHash })
+          .where(and(eq(wordsCache.word, normalized), eq(wordsCache.level, level)));
+
+        return {
+          word: normalized,
+          definition: row.definition,
+          example: row.example,
+          imageUrl,
+          translation: row.translation ?? null,
+        };
+      }
+    }
+
     return {
       word: normalized,
       definition: row.definition,
@@ -104,21 +133,12 @@ export async function defineWord(
 
   if (!imageUrl) {
     try {
-      const openai = getOpenAI();
-      const imgPrompt = `Minimalist illustration of "${normalized}" on a white background, suitable for a language learning app, simple and clear.`;
-      const imgResponse = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt: imgPrompt,
-        size: "1024x1024",
-        n: 1,
-      });
-
-      const b64 = imgResponse.data?.[0]?.b64_json;
-      if (b64) {
-        imageUrl = await saveImage(normalized, imgPrompt, b64);
+      const buffer = await fetchWordImageBuffer(normalized);
+      if (buffer) {
+        imageUrl = await saveImage(normalized, normalized, buffer);
       }
     } catch {
-      // Image generation is non-fatal
+      // Image fetch is non-fatal
     }
   }
 
