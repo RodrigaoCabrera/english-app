@@ -26,9 +26,11 @@ export function ReadingDetailTabs({
 
   return (
     <div>
-      <div className="flex border-b border-border mb-6">
+      <div className="flex border-b border-border mb-6" role="tablist">
         <button
           onClick={() => setTab("read")}
+          role="tab"
+          aria-selected={tab === "read"}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
             tab === "read"
               ? "border-primary text-foreground"
@@ -39,6 +41,8 @@ export function ReadingDetailTabs({
         </button>
         <button
           onClick={() => setTab("practice")}
+          role="tab"
+          aria-selected={tab === "practice"}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
             tab === "practice"
               ? "border-primary text-foreground"
@@ -49,17 +53,19 @@ export function ReadingDetailTabs({
         </button>
       </div>
 
-      {tab === "read" && (
-        <HoverableText markdown={bodyMd} keyWords={keyWords} level={level} />
-      )}
+      <div role="tabpanel">
+        {tab === "read" && (
+          <HoverableText markdown={bodyMd} keyWords={keyWords} level={level} />
+        )}
 
-      {tab === "practice" && (
-        <ReadingPractice
-          readingId={readingId}
-          referenceText={referenceText}
-          pastAttempts={pastAttempts}
-        />
-      )}
+        {tab === "practice" && (
+          <ReadingPractice
+            readingId={readingId}
+            referenceText={referenceText}
+            pastAttempts={pastAttempts}
+          />
+        )}
+      </div>
     </div>
   );
 }

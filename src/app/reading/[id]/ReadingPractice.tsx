@@ -72,6 +72,7 @@ export function ReadingPractice({ readingId, referenceText, pastAttempts }: Prop
         <div className="border-t border-border pt-4">
           <button
             onClick={() => setHistoryOpen((v) => !v)}
+            aria-expanded={historyOpen}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {historyOpen ? "Hide" : "Show"} history ({pastAttempts.length} attempt
