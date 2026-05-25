@@ -65,13 +65,13 @@ export default async function ReadingDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/reading" className="hover:text-foreground transition-colors">
-          Reading
-        </Link>
-        <span>/</span>
-        <span className="text-foreground capitalize">{reading.topic}</span>
-      </div>
+      <Link
+        href="/reading"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span aria-hidden>←</span>
+        Back to Reading
+      </Link>
 
       <div className="flex items-center gap-3">
         <span

@@ -31,7 +31,7 @@ export function ReadingDetailTabs({
           onClick={() => setTab("read")}
           role="tab"
           aria-selected={tab === "read"}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          className={`cursor-pointer px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
             tab === "read"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -43,7 +43,7 @@ export function ReadingDetailTabs({
           onClick={() => setTab("practice")}
           role="tab"
           aria-selected={tab === "practice"}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          className={`cursor-pointer px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
             tab === "practice"
               ? "border-primary text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -61,6 +61,9 @@ export function ReadingDetailTabs({
         {tab === "practice" && (
           <ReadingPractice
             readingId={readingId}
+            bodyMd={bodyMd}
+            keyWords={keyWords}
+            level={level}
             referenceText={referenceText}
             pastAttempts={pastAttempts}
           />

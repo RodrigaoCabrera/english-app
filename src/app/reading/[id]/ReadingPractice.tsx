@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Recorder } from "@/components/Recorder";
 import { PronunciationFeedback } from "@/components/PronunciationFeedback";
+import { HoverableText } from "@/components/HoverableText";
 import type { PronunciationScore } from "@/services/pronunciation-scorer";
+import type { CefrLevel } from "@/lib/cefr";
 
 export interface PastAttempt {
   id: number;
@@ -18,10 +20,13 @@ export interface PastAttempt {
 interface Props {
   readingId: number;
   referenceText: string;
+  bodyMd: string;
+  keyWords: string[];
+  level: CefrLevel;
   pastAttempts: PastAttempt[];
 }
 
-export function ReadingPractice({ readingId, referenceText, pastAttempts }: Props) {
+export function ReadingPractice({ readingId, referenceText, bodyMd, keyWords, level, pastAttempts }: Props) {
   const [score, setScore] = useState<PronunciationScore | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -44,10 +49,10 @@ export function ReadingPractice({ readingId, referenceText, pastAttempts }: Prop
   return (
     <div className="space-y-6">
       <div className="rounded-md border border-border bg-muted/30 p-4">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-2">
-          Read aloud
+        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-3">
+          Read aloud — hover words to explore
         </p>
-        <p className="text-sm leading-relaxed text-muted-foreground">{referenceText}</p>
+        <HoverableText markdown={bodyMd} keyWords={keyWords} level={level} />
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -73,7 +78,7 @@ export function ReadingPractice({ readingId, referenceText, pastAttempts }: Prop
           <button
             onClick={() => setHistoryOpen((v) => !v)}
             aria-expanded={historyOpen}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {historyOpen ? "Hide" : "Show"} history ({pastAttempts.length} attempt
             {pastAttempts.length !== 1 ? "s" : ""})

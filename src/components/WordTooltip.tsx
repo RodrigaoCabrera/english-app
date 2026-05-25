@@ -26,6 +26,7 @@ export function WordTooltip({ word, displayWord, level }: Props) {
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
@@ -88,6 +89,7 @@ export function WordTooltip({ word, displayWord, level }: Props) {
 
   async function handleSave() {
     setSaveError(false);
+    setSaving(true);
     try {
       const res = await fetch(`/api/words/${encodeURIComponent(word)}/save`, {
         method: "POST",
@@ -101,6 +103,8 @@ export function WordTooltip({ word, displayWord, level }: Props) {
       setSaved(true);
     } catch {
       setSaveError(true);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -127,10 +131,10 @@ export function WordTooltip({ word, displayWord, level }: Props) {
               <button
                 onClick={handlePlayAudio}
                 disabled={audioPlaying}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded border border-border disabled:opacity-40"
+                className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded border border-border disabled:opacity-40"
                 aria-label="Play pronunciation"
               >
-                {audioPlaying ? "..." : "Play"}
+                {audioPlaying ? "Playing…" : "Play"}
               </button>
             </div>
             {data.translation && (
@@ -155,11 +159,11 @@ export function WordTooltip({ word, displayWord, level }: Props) {
             )}
             <button
               onClick={handleSave}
-              disabled={saved}
+              disabled={saved || saving}
               aria-label="Save this word to your vocabulary"
-              className="w-full text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              className="cursor-pointer w-full text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
-              {saved ? "Saved" : "Save word"}
+              {saving ? "Saving…" : saved ? "Saved" : "Save word"}
             </button>
           </div>
         )}

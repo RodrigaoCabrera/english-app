@@ -32,6 +32,7 @@ export default function ReadingPage() {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadReadings = useCallback(async () => {
@@ -89,7 +90,7 @@ export default function ReadingPage() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this reading?")) return;
+    setConfirmDeleteId(null);
     setDeletingId(id);
     setDeleteError(null);
     try {
@@ -97,11 +98,11 @@ export default function ReadingPage() {
       if (res.ok) {
         setAllReadings((prev) => prev.filter((r) => r.id !== id));
       } else {
-        setDeleteError("Failed to delete reading. Please try again.");
+        setDeleteError("Failed to delete. Please try again.");
       }
     } catch (error) {
       console.error("Failed to delete reading:", error);
-      setDeleteError("Failed to delete reading. Please try again.");
+      setDeleteError("Failed to delete. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -124,7 +125,7 @@ export default function ReadingPage() {
           <button
             key={l}
             onClick={() => setFilterLevel(l)}
-            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+            className={`cursor-pointer text-xs px-3 py-1 rounded-full border transition-colors ${
               filterLevel === l
                 ? "bg-primary text-primary-foreground border-primary"
                 : "border-border text-muted-foreground hover:text-foreground"
@@ -171,14 +172,35 @@ export default function ReadingPage() {
                 {new Date(r.createdAt).toLocaleDateString()}
               </span>
             </Link>
-            <button
-              onClick={() => handleDelete(r.id)}
-              disabled={deletingId === r.id}
-              className="p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
-              aria-label="Delete reading"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {confirmDeleteId === r.id ? (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="cursor-pointer text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(r.id)}
+                  className="cursor-pointer text-xs px-2 py-1 rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteId(r.id)}
+                disabled={deletingId === r.id}
+                className="cursor-pointer p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                aria-label="Delete reading"
+              >
+                {deletingId === r.id ? (
+                  <span className="text-xs text-muted-foreground">Deleting…</span>
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </button>
+            )}
           </li>
         ))}
       </ul>
