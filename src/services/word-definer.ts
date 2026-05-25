@@ -10,6 +10,7 @@ export interface WordDefinition {
   definition: string;
   example: string;
   imageUrl: string | null;
+  translation: string | null;
 }
 
 interface DictEntry {
@@ -40,7 +41,6 @@ async function fetchDefinition(word: string): Promise<{ definition: string; exam
     }
   }
 
-  // Fall back to first definition without example
   const firstDef = entry.meanings?.[0]?.definitions?.[0];
   if (firstDef?.definition) {
     return {
@@ -50,6 +50,25 @@ async function fetchDefinition(word: string): Promise<{ definition: string; exam
   }
 
   throw new Error(`No definition found for "${word}"`);
+}
+
+async function fetchTranslation(word: string): Promise<string | null> {
+  try {
+    const openai = getOpenAI();
+    const res = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: `Translate the English word "${word}" to Spanish. Reply with only 1-3 Spanish words, no punctuation, no explanation.`,
+        },
+      ],
+      max_tokens: 20,
+    });
+    return res.choices[0]?.message?.content?.trim() ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function defineWord(
@@ -71,10 +90,14 @@ export async function defineWord(
       definition: row.definition,
       example: row.example,
       imageUrl: row.imageHash ? `/cache/img/${row.imageHash}.png` : null,
+      translation: row.translation ?? null,
     };
   }
 
-  const { definition, example } = await fetchDefinition(normalized);
+  const [{ definition, example }, translation] = await Promise.all([
+    fetchDefinition(normalized),
+    fetchTranslation(normalized),
+  ]);
 
   const imageHash = sha1(normalized);
   let imageUrl = await findImageByWord(normalized);
@@ -107,8 +130,9 @@ export async function defineWord(
       definition,
       example,
       imageHash: imageUrl ? imageHash : null,
+      translation,
     })
     .onConflictDoNothing();
 
-  return { word: normalized, definition, example, imageUrl };
+  return { word: normalized, definition, example, imageUrl, translation };
 }
