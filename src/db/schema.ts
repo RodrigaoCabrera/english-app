@@ -15,6 +15,7 @@ export const wordsCache = pgTable("words_cache", {
   definition: text("definition").notNull(),
   example: text("example").notNull(),
   imageHash: text("image_hash"),
+  translation: text("translation"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -40,5 +41,15 @@ export const readingAttempts = pgTable("reading_attempts", {
     completenessScore: number;
     words: Array<{ word: string; accuracyScore: number; errorType: string }>;
   }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const savedWords = pgTable("saved_words", {
+  id: serial("id").primaryKey(),
+  word: text("word").notNull(),
+  level: text("level").notNull(),
+  translation: text("translation"),
+  definition: text("definition"),
+  imageHash: text("image_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
