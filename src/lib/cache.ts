@@ -24,26 +24,22 @@ export async function findImageByWord(word: string): Promise<string | null> {
 export async function saveImage(
   word: string,
   prompt: string,
-  b64: string
+  imageBuffer: Buffer
 ): Promise<string> {
-  // Key is deterministic: SHA-1 of the normalized word.
-  // Same word → same hash → same file, shared across all users and levels.
   const hash = sha1(word);
 
   if (!fs.existsSync(IMG_DIR)) {
     fs.mkdirSync(IMG_DIR, { recursive: true });
   }
 
-  const buffer = Buffer.from(b64, "base64");
   const filePath = path.join(IMG_DIR, `${hash}.png`);
 
-  // Overwrite is safe — content is always the same for the same word
-  fs.writeFileSync(filePath, buffer);
+  fs.writeFileSync(filePath, imageBuffer);
 
   const relativePath = `/cache/img/${hash}.png`;
   await db
     .insert(imagesCache)
-    .values({ hash, prompt, filePath: relativePath, mime: "image/png", bytes: buffer.length })
+    .values({ hash, prompt, filePath: relativePath, mime: "image/png", bytes: imageBuffer.length })
     .onConflictDoNothing();
 
   return relativePath;
