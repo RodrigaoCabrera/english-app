@@ -27,6 +27,7 @@ export function WordTooltip({ word, displayWord, level }: Props) {
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   async function handleOpenChange(open: boolean) {
     if (!open || data !== null || loading) return;
@@ -36,6 +37,10 @@ export function WordTooltip({ word, displayWord, level }: Props) {
       const res = await fetch(
         `/api/words/${encodeURIComponent(word)}?level=${level}`
       );
+      if (!res.ok) {
+        setFailed(true);
+        return;
+      }
       const json = await res.json();
       if (json.success) {
         setData(json.data);
@@ -54,30 +59,48 @@ export function WordTooltip({ word, displayWord, level }: Props) {
     setAudioPlaying(true);
     try {
       const res = await fetch(`/api/words/${encodeURIComponent(word)}/audio`);
+      if (!res.ok) {
+        setAudioPlaying(false);
+        return;
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      const cleanup = () => URL.revokeObjectURL(url);
       audio.onended = () => {
         setAudioPlaying(false);
-        URL.revokeObjectURL(url);
+        cleanup();
       };
-      audio.onerror = () => setAudioPlaying(false);
-      audio.play();
+      audio.onerror = () => {
+        setAudioPlaying(false);
+        cleanup();
+      };
+      try {
+        audio.play();
+      } catch {
+        setAudioPlaying(false);
+        cleanup();
+      }
     } catch {
       setAudioPlaying(false);
     }
   }
 
   async function handleSave() {
+    setSaveError(false);
     try {
-      await fetch(`/api/words/${encodeURIComponent(word)}/save`, {
+      const res = await fetch(`/api/words/${encodeURIComponent(word)}/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ level }),
       });
+      if (!res.ok) {
+        setSaveError(true);
+        return;
+      }
       setSaved(true);
     } catch {
-      // Non-fatal
+      setSaveError(true);
     }
   }
 
@@ -127,9 +150,13 @@ export function WordTooltip({ word, displayWord, level }: Props) {
                 style={{ maxHeight: 150 }}
               />
             )}
+            {saveError && (
+              <p className="text-xs text-destructive">Failed to save word.</p>
+            )}
             <button
               onClick={handleSave}
               disabled={saved}
+              aria-label="Save this word to your vocabulary"
               className="w-full text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               {saved ? "Saved" : "Save word"}
