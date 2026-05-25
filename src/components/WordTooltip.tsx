@@ -55,36 +55,15 @@ export function WordTooltip({ word, displayWord, level }: Props) {
     }
   }
 
-  async function handlePlayAudio() {
-    if (audioPlaying) return;
-    setAudioPlaying(true);
-    try {
-      const res = await fetch(`/api/words/${encodeURIComponent(word)}/audio`);
-      if (!res.ok) {
-        setAudioPlaying(false);
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      const cleanup = () => URL.revokeObjectURL(url);
-      audio.onended = () => {
-        setAudioPlaying(false);
-        cleanup();
-      };
-      audio.onerror = () => {
-        setAudioPlaying(false);
-        cleanup();
-      };
-      try {
-        audio.play();
-      } catch {
-        setAudioPlaying(false);
-        cleanup();
-      }
-    } catch {
-      setAudioPlaying(false);
-    }
+  function handlePlayAudio() {
+    if (audioPlaying || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = "en-US";
+    utterance.onstart = () => setAudioPlaying(true);
+    utterance.onend = () => setAudioPlaying(false);
+    utterance.onerror = () => setAudioPlaying(false);
+    window.speechSynthesis.speak(utterance);
   }
 
   async function handleSave() {
