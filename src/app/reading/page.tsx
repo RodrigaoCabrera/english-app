@@ -38,8 +38,8 @@ export default function ReadingPage() {
       const res = await fetch("/api/readings");
       const json = await res.json();
       if (json.success) setAllReadings(json.data);
-    } catch {
-      // Silently fail — empty list is safe
+    } catch (error) {
+      console.error("Failed to load readings:", error);
     }
   }, []);
 
@@ -91,8 +91,12 @@ export default function ReadingPage() {
     if (!confirm("Delete this reading?")) return;
     setDeletingId(id);
     try {
-      await fetch(`/api/readings/${id}`, { method: "DELETE" });
-      setAllReadings((prev) => prev.filter((r) => r.id !== id));
+      const res = await fetch(`/api/readings/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setAllReadings((prev) => prev.filter((r) => r.id !== id));
+      }
+    } catch (error) {
+      console.error("Failed to delete reading:", error);
     } finally {
       setDeletingId(null);
     }
