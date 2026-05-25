@@ -22,13 +22,25 @@ export async function getWordAudio(word: string): Promise<Buffer> {
   }
 
   const openai = getOpenAI();
-  const response = await openai.audio.speech.create({
-    model: "tts-1",
-    voice: "nova",
-    input: word,
-  });
+  let response;
+  try {
+    response = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: "nova",
+      input: word,
+    });
+  } catch (error) {
+    console.error("[tts] speech generation error for word:", word, error);
+    throw error;
+  }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  fs.writeFileSync(filePath, buffer);
+
+  try {
+    fs.writeFileSync(filePath, buffer);
+  } catch (error) {
+    console.error("[tts] failed to write audio cache:", filePath, error);
+  }
+
   return buffer;
 }

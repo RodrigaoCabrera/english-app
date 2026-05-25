@@ -9,7 +9,7 @@ export async function GET(
   const clean = decodeURIComponent(word).trim();
 
   if (!clean || clean.length > 60) {
-    return new NextResponse("Invalid word", { status: 400 });
+    return NextResponse.json({ success: false, error: "Invalid word" }, { status: 400 });
   }
 
   try {
@@ -21,6 +21,9 @@ export async function GET(
       },
     });
   } catch {
-    return new NextResponse("Failed to generate audio", { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to generate audio." },
+      { status: 500 }
+    );
   }
 }

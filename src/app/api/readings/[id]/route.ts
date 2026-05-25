@@ -14,6 +14,14 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: "Invalid id" }, { status: 400 });
   }
 
-  await db.delete(readings).where(eq(readings.id, numId));
-  return NextResponse.json({ success: true });
+  try {
+    await db.delete(readings).where(eq(readings.id, numId));
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[readings delete] error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete reading." },
+      { status: 500 }
+    );
+  }
 }

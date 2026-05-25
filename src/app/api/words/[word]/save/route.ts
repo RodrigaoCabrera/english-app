@@ -42,13 +42,20 @@ export async function POST(
 
   const row = cached[0];
 
-  await db.insert(savedWords).values({
-    word: clean,
-    level,
-    translation: row?.translation ?? null,
-    definition: row?.definition ?? null,
-    imageHash: row?.imageHash ?? null,
-  });
-
-  return NextResponse.json({ success: true });
+  try {
+    await db.insert(savedWords).values({
+      word: clean,
+      level,
+      translation: row?.translation ?? null,
+      definition: row?.definition ?? null,
+      imageHash: row?.imageHash ?? null,
+    });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[words save] error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to save word." },
+      { status: 500 }
+    );
+  }
 }
