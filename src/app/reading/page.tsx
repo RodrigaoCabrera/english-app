@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
@@ -14,27 +14,48 @@ interface Reading {
 }
 
 const LEVEL_KEY = "english-app:level";
+const UNDO_DURATION = 4000;
 
-function cefrBadgeClass(level: string): string {
+type LevelColor = { dot: string; badge: string; border: string; glow: string };
+
+function cefrColor(level: string): LevelColor {
   if (level === "A1" || level === "A2")
-    return "bg-emerald-900/50 text-emerald-400 border border-emerald-800/50";
+    return {
+      dot: "bg-emerald-400",
+      badge: "text-emerald-400",
+      border: "border-l-emerald-500/60",
+      glow: "hover:border-l-emerald-400",
+    };
   if (level === "B1" || level === "B2")
-    return "bg-amber-900/40 text-amber-400 border border-amber-800/40";
-  return "bg-violet-900/40 text-violet-400 border border-violet-800/40";
+    return {
+      dot: "bg-amber-400",
+      badge: "text-amber-400",
+      border: "border-l-amber-500/60",
+      glow: "hover:border-l-amber-400",
+    };
+  return {
+    dot: "bg-violet-400",
+    badge: "text-violet-400",
+    border: "border-l-violet-500/60",
+    glow: "hover:border-l-violet-400",
+  };
 }
 
 export default function ReadingPage() {
   const router = useRouter();
   const [allReadings, setAllReadings] = useState<Reading[]>([]);
   const [filterLevel, setFilterLevel] = useState<string>("all");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState<CefrLevel>("B1");
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [deleteModalId, setDeleteModalId] = useState<number | null>(null);
+  const [undoReading, setUndoReading] = useState<Reading | null>(null);
+  const [undoProgress, setUndoProgress] = useState(0);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadReadings = useCallback(async () => {
     try {
@@ -54,15 +75,22 @@ export default function ReadingPage() {
     }
   }, [loadReadings]);
 
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+    };
+  }, []);
+
   const filtered =
     filterLevel === "all"
       ? allReadings
       : allReadings.filter((r) => r.level === filterLevel);
 
-  function openModal() {
+  function openGenerateModal() {
     setGenerateError(null);
     setTopic("");
-    setModalOpen(true);
+    setGenerateModalOpen(true);
   }
 
   async function handleGenerate(e: React.FormEvent) {
@@ -90,39 +118,62 @@ export default function ReadingPage() {
     }
   }
 
-  async function handleDelete(id: number) {
-    setConfirmDeleteId(null);
-    setDeletingId(id);
-    setDeleteError(null);
-    try {
-      const res = await fetch(`/api/readings/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setAllReadings((prev) => prev.filter((r) => r.id !== id));
-      } else {
-        setDeleteError("Failed to delete. Please try again.");
-      }
-    } catch (error) {
-      console.error("Failed to delete reading:", error);
-      setDeleteError("Failed to delete. Please try again.");
-    } finally {
-      setDeletingId(null);
+  function confirmDelete() {
+    if (deleteModalId === null) return;
+    const reading = allReadings.find((r) => r.id === deleteModalId);
+    if (!reading) return;
+    const id = deleteModalId;
+    setDeleteModalId(null);
+
+    setAllReadings((prev) => prev.filter((r) => r.id !== id));
+    setUndoReading(reading);
+    setUndoProgress(0);
+
+    const start = Date.now();
+    undoIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      setUndoProgress(Math.min(elapsed / UNDO_DURATION, 1));
+    }, 50);
+
+    undoTimerRef.current = setTimeout(async () => {
+      if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+      setUndoReading(null);
+      setUndoProgress(0);
+      await fetch(`/api/readings/${id}`, { method: "DELETE" });
+    }, UNDO_DURATION);
+  }
+
+  function handleUndo() {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+    if (undoReading) {
+      setAllReadings((prev) =>
+        [...prev, undoReading].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      );
     }
+    setUndoReading(null);
+    setUndoProgress(0);
   }
 
   return (
     <div className="space-y-7">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl font-semibold">Reading</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Generate passages and practice pronunciation.
+          <h1 className="font-serif text-2xl font-semibold tracking-tight">Reading</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {allReadings.length > 0
+              ? `${allReadings.length} passage${allReadings.length === 1 ? "" : "s"} · hover to translate`
+              : "Generate a passage to get started"}
           </p>
         </div>
         <button
-          onClick={openModal}
-          className="cursor-pointer text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          onClick={openGenerateModal}
+          className="cursor-pointer shrink-0 text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          Generate new
+          + Generate
         </button>
       </div>
 
@@ -142,15 +193,11 @@ export default function ReadingPage() {
         ))}
       </div>
 
-      {deleteError && (
-        <p className="text-sm text-destructive">{deleteError}</p>
-      )}
-
       {allReadings.length === 0 && (
         <div className="border border-border/50 rounded-lg p-14 text-center space-y-3">
           <p className="text-muted-foreground text-sm">No readings yet.</p>
           <button
-            onClick={openModal}
+            onClick={openGenerateModal}
             className="cursor-pointer text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
           >
             Generate your first reading
@@ -162,63 +209,89 @@ export default function ReadingPage() {
         <p className="text-sm text-muted-foreground">No readings at this level.</p>
       )}
 
-      <ul className="space-y-1.5">
-        {filtered.map((r) => (
-          <li key={r.id} className="group flex items-center gap-2">
-            <Link
-              href={`/reading/${r.id}`}
-              className="flex-1 flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 hover:border-border hover:bg-accent/30 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className={`text-[10px] font-semibold uppercase tracking-widest px-1.5 py-0.5 rounded ${cefrBadgeClass(r.level)}`}
-                >
-                  {r.level}
-                </span>
-                <span className="capitalize text-sm">{r.topic}</span>
-              </div>
-              <span className="text-xs text-muted-foreground shrink-0">
-                {new Date(r.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}
-              </span>
-            </Link>
-
-            {confirmDeleteId === r.id ? (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => setConfirmDeleteId(null)}
-                  className="cursor-pointer text-xs px-2.5 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleDelete(r.id)}
-                  className="cursor-pointer text-xs px-2.5 py-1 rounded border border-destructive/60 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirmDeleteId(r.id)}
-                disabled={deletingId === r.id}
-                className="cursor-pointer p-2 text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all disabled:opacity-40"
-                aria-label="Delete reading"
+      <ul className="space-y-2">
+        {filtered.map((r) => {
+          const c = cefrColor(r.level);
+          return (
+            <li key={r.id} className="flex items-stretch gap-0">
+              <Link
+                href={`/reading/${r.id}`}
+                className={`flex-1 flex items-center justify-between px-5 py-4 rounded-l-lg border border-r-0 border-border/50 border-l-2 bg-card/60 hover:bg-card transition-all ${c.border} ${c.glow}`}
               >
-                {deletingId === r.id ? (
-                  <span className="text-xs">…</span>
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`shrink-0 w-2 h-2 rounded-full ${c.dot}`} />
+                  <div className="min-w-0">
+                    <p className="capitalize text-sm font-medium leading-snug truncate">
+                      {r.topic}
+                    </p>
+                    <p className={`text-xs mt-0.5 font-semibold ${c.badge}`}>
+                      {r.level}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0 ml-4">
+                  {new Date(r.createdAt).toLocaleDateString("en", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              </Link>
+
+              <button
+                onClick={() => setDeleteModalId(r.id)}
+                aria-label="Delete reading"
+                className="cursor-pointer flex items-center px-3 rounded-r-lg border border-l-0 border-border/50 bg-card/60 hover:bg-card text-muted-foreground/30 hover:text-destructive transition-all"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
-            )}
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
-      {modalOpen && (
+      {/* Delete confirmation modal */}
+      {deleteModalId !== null && (
         <div
           className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteModalId(null);
+          }}
+        >
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <div className="space-y-1">
+              <h2 className="font-serif text-lg font-semibold">Delete reading?</h2>
+              <p className="text-sm text-muted-foreground">
+                <span className="capitalize text-foreground/80">
+                  {allReadings.find((r) => r.id === deleteModalId)?.topic}
+                </span>{" "}
+                will be removed. You can undo this right after.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteModalId(null)}
+                className="cursor-pointer flex-1 h-9 rounded-md border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="cursor-pointer flex-1 h-9 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate modal */}
+      {generateModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setGenerateModalOpen(false);
+          }}
         >
           <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm space-y-5 shadow-2xl">
             <div>
@@ -252,7 +325,9 @@ export default function ReadingPage() {
                   className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                 >
                   {CEFR_LEVELS.map((l) => (
-                    <option key={l} value={l}>{l}</option>
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -262,7 +337,7 @@ export default function ReadingPage() {
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={() => setGenerateModalOpen(false)}
                   disabled={generating}
                   className="cursor-pointer flex-1 h-9 rounded-md border border-border text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
@@ -278,6 +353,29 @@ export default function ReadingPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Undo toast */}
+      {undoReading && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3 shadow-2xl min-w-64">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-foreground/80 truncate">
+              <span className="capitalize">{undoReading.topic}</span> deleted
+            </p>
+            <div className="mt-1.5 h-0.5 bg-border rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-none rounded-full"
+                style={{ width: `${(1 - undoProgress) * 100}%` }}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleUndo}
+            className="cursor-pointer text-xs font-medium text-primary hover:text-primary/80 transition-colors shrink-0"
+          >
+            Undo
+          </button>
         </div>
       )}
     </div>
