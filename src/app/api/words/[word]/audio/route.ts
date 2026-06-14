@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWordAudio } from "@/lib/tts";
-import { rateLimit, clientKey, tooManyRequests } from "@/lib/rate-limit";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { getUserId } from "@/lib/auth";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   segmentData: { params: Promise<{ word: string }> }
 ) {
-  // TTS synthesis hits OpenAI (billed) — bound it per client.
-  const limit = rateLimit(clientKey(request, "word-audio"), {
-    limit: 60,
-    windowMs: 60 * 1000,
-  });
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
+  const limit = rateLimit(`word-audio:${userId}`, { limit: 60, windowMs: 60 * 1000 });
   if (!limit.allowed) return tooManyRequests(limit);
 
   const { word } = await segmentData.params;

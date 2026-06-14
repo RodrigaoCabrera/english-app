@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { defineWord } from "@/services/word-definer";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/cefr";
-import { rateLimit, clientKey, tooManyRequests } from "@/lib/rate-limit";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { getUserId } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
   segmentData: { params: Promise<{ word: string }> }
 ) {
-  // Definitions can fan out (one per hovered word) and may hit OpenAI on a
-  // cache miss, so allow a generous but bounded burst.
-  const limit = rateLimit(clientKey(request, "words"), {
-    limit: 60,
-    windowMs: 60 * 1000,
-  });
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
+  const limit = rateLimit(`words:${userId}`, { limit: 60, windowMs: 60 * 1000 });
   if (!limit.allowed) return tooManyRequests(limit);
 
   const { word } = await segmentData.params;

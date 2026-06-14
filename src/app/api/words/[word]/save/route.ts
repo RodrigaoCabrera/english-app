@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { wordsCache, savedWords } from "@/db/schema";
 import { CEFR_LEVELS } from "@/lib/cefr";
+import { getUserId } from "@/lib/auth";
 
 const BodySchema = z.object({
   level: z.enum(CEFR_LEVELS),
@@ -13,6 +14,9 @@ export async function POST(
   request: NextRequest,
   segmentData: { params: Promise<{ word: string }> }
 ) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+
   const { word } = await segmentData.params;
   const clean = decodeURIComponent(word).trim().toLowerCase();
 
@@ -44,6 +48,7 @@ export async function POST(
 
   try {
     await db.insert(savedWords).values({
+      userId,
       word: clean,
       level,
       translation: row?.translation ?? null,
