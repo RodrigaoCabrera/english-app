@@ -7,11 +7,13 @@ export type { PronunciationScore, WordAssessment };
 export async function scoreReading(
   audioBuffer: Buffer,
   referenceText: string,
-  readingId: number
+  readingId: number,
+  userId: string
 ): Promise<PronunciationScore> {
   const score = await assessPronunciation(audioBuffer, referenceText);
 
   await db.insert(readingAttempts).values({
+    userId,
     readingId,
     transcript: score.recognizedText,
     score: {
