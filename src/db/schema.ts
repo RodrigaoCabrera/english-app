@@ -1,13 +1,18 @@
-import { pgTable, text, jsonb, integer, timestamp, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, jsonb, integer, timestamp, serial, index } from "drizzle-orm/pg-core";
 
-export const readings = pgTable("readings", {
-  id: serial("id").primaryKey(),
-  level: text("level").notNull(),
-  topic: text("topic").notNull(),
-  bodyMd: text("body_md").notNull(),
-  wordList: jsonb("word_list").notNull().$type<string[]>(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const readings = pgTable(
+  "readings",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    level: text("level").notNull(),
+    topic: text("topic").notNull(),
+    bodyMd: text("body_md").notNull(),
+    wordList: jsonb("word_list").notNull().$type<string[]>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("readings_user_id_idx").on(t.userId)]
+);
 
 export const wordsCache = pgTable("words_cache", {
   word: text("word").primaryKey(),
@@ -28,28 +33,45 @@ export const imagesCache = pgTable("images_cache", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const readingAttempts = pgTable("reading_attempts", {
-  id: serial("id").primaryKey(),
-  readingId: integer("reading_id")
-    .notNull()
-    .references(() => readings.id),
-  audioPath: text("audio_path"),
-  transcript: text("transcript"),
-  score: jsonb("score").$type<{
-    accuracyScore: number;
-    fluencyScore: number;
-    completenessScore: number;
-    words: Array<{ word: string; accuracyScore: number; errorType: string }>;
-  }>(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const readingAttempts = pgTable(
+  "reading_attempts",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    readingId: integer("reading_id")
+      .notNull()
+      .references(() => readings.id),
+    audioPath: text("audio_path"),
+    transcript: text("transcript"),
+    score: jsonb("score").$type<{
+      accuracyScore: number;
+      fluencyScore: number;
+      completenessScore: number;
+      words: Array<{ word: string; accuracyScore: number; errorType: string }>;
+    }>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("reading_attempts_user_id_idx").on(t.userId)]
+);
 
-export const savedWords = pgTable("saved_words", {
-  id: serial("id").primaryKey(),
-  word: text("word").notNull(),
-  level: text("level").notNull(),
-  translation: text("translation"),
-  definition: text("definition"),
-  imageHash: text("image_hash"),
+export const savedWords = pgTable(
+  "saved_words",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    word: text("word").notNull(),
+    level: text("level").notNull(),
+    translation: text("translation"),
+    definition: text("definition"),
+    imageHash: text("image_hash"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("saved_words_user_id_idx").on(t.userId)]
+);
+
+export const userProfiles = pgTable("user_profiles", {
+  clerkUserId: text("clerk_user_id").primaryKey(),
+  cefrLevel: text("cefr_level").notNull().default("B1"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
