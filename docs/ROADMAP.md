@@ -28,15 +28,17 @@ Phase numbering continues from the MVP (which was phases 1–4).
 
 **Goal:** turn the single-user demo into a multi-user app. Unblocks everything below.
 
-- [x] Choose auth approach (Auth.js/NextAuth vs Clerk vs Lucia vs custom) — decide before coding
-- [x] `users` table + session strategy
-- [x] Sign up / sign in / sign out flows
-- [x] Protect API routes; associate `readings` and `reading_attempts` with a user
-- [x] Migrate the CEFR level from `localStorage` to the user profile
-- [x] Move rate limiting from per-IP to per-user + a global daily cost cap
+- [x] Choose auth approach — **Clerk** (OAuth social only: Google/GitHub)
+- [x] Identity via Clerk (no local `users` table — Clerk owns it); `user_profiles` for app prefs
+- [x] Sign in / sign up / sign out flows (Clerk components)
+- [x] Protect API routes; scope `readings`/`reading_attempts`/`saved_words` to the user
+- [x] Migrate the CEFR level from `localStorage` to `user_profiles`
+- [x] Move rate limiting from per-IP to per-user
+- [ ] Global daily cost cap (deferred — hook left in place, full impl later)
+- [x] Restrict access via allowlist
 
-**Data model:** new `users`; add `user_id` FK to `readings`, `reading_attempts`,
-and (later) SRS tables.
+**Data model:** `user_id text` (Clerk id) on `readings`, `reading_attempts`,
+`saved_words`; new `user_profiles` (clerk_user_id PK, cefr_level). No local users table.
 
 ---
 
