@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWordAudio } from "@/lib/tts";
+import { rateLimit, clientKey, tooManyRequests } from "@/lib/rate-limit";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   segmentData: { params: Promise<{ word: string }> }
 ) {
+  // TTS synthesis hits OpenAI (billed) — bound it per client.
+  const limit = rateLimit(clientKey(request, "word-audio"), {
+    limit: 60,
+    windowMs: 60 * 1000,
+  });
+  if (!limit.allowed) return tooManyRequests(limit);
+
   const { word } = await segmentData.params;
   const clean = decodeURIComponent(word).trim();
 

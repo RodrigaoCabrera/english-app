@@ -11,6 +11,35 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U english_user -d english_app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Production app container. Build locally with: docker compose --profile app up --build
+  # Run DB migrations once the DB is up with: pnpm db:migrate (from the host, or exec into the container).
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: english-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.local
+    environment:
+      # Override the host-oriented DATABASE_URL to reach Postgres over the compose network.
+      DATABASE_URL: postgresql://english_user:english_pass@postgres:5432/english_app
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist AI-generated word images across container restarts.
+      - imgcache:/app/public/cache
 
 volumes:
   pgdata:
+  imgcache:

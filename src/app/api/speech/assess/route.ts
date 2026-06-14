@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { scoreReading } from "@/services/pronunciation-scorer";
+import { rateLimit, clientKey, tooManyRequests } from "@/lib/rate-limit";
 
 const FieldsSchema = z.object({
   referenceText: z.string().min(1).max(2000),
@@ -8,6 +9,13 @@ const FieldsSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Azure pronunciation assessment is billed per call — bound it per client.
+  const limit = rateLimit(clientKey(request, "speech-assess"), {
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!limit.allowed) return tooManyRequests(limit);
+
   let formData: FormData;
   try {
     formData = await request.formData();

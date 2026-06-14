@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { readings } from "@/db/schema";
 import { generateReading } from "@/services/reading-generator";
 import { CEFR_LEVELS, type CefrLevel } from "@/lib/cefr";
+import { rateLimit, clientKey, tooManyRequests } from "@/lib/rate-limit";
 
 export async function GET() {
   const rows = await db
@@ -27,6 +28,13 @@ const BodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Reading generation hits the LLM — keep it tightly bounded per client.
+  const limit = rateLimit(clientKey(request, "readings"), {
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!limit.allowed) return tooManyRequests(limit);
+
   let body: unknown;
   try {
     body = await request.json();
