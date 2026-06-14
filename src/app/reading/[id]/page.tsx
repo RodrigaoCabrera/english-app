@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { and, eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
@@ -37,7 +37,7 @@ export default async function ReadingDetailPage({ params }: Props) {
   if (isNaN(numId)) notFound();
 
   const userId = await getUserId();
-  if (!userId) notFound();
+  if (!userId) redirect("/sign-in");
 
   const [rows, attempts] = await Promise.all([
     db.select().from(readings).where(and(eq(readings.id, numId), eq(readings.userId, userId))).limit(1),

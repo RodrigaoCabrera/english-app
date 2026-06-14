@@ -34,7 +34,7 @@ Token usage for Ollama calls is tracked in-process by `src/lib/token-budget.ts` 
 
 Auth uses **Clerk** (`@clerk/nextjs` v7), OAuth social only (Google + GitHub; email/password disabled in the Clerk dashboard). `<ClerkProvider>` wraps the root layout and `src/proxy.ts` (Next.js 16 renamed the Middleware convention to **Proxy**) protects all routes except `/`, `/sign-in`, `/sign-up`, and static assets via `clerkMiddleware`. Server code reads the user via `getUserId()` in `src/lib/auth.ts` (wrapping Clerk's `auth()`); routes return `401` without a session.
 
-Access is restricted to an **allowlist**: the Clerk dashboard allowlist is the primary gate, with an optional code fallback (`ALLOWLIST_EMAILS` env, enforced in `src/proxy.ts`).
+Access is restricted to an **allowlist**: the Clerk dashboard allowlist is the primary gate, with an optional code fallback (`ALLOWLIST_EMAILS` env, enforced in `src/proxy.ts`). ⚠️ If neither the Clerk dashboard allowlist nor `ALLOWLIST_EMAILS` is configured, any authenticated Clerk user can access the app — configure at least one before exposing the app.
 
 **Per-user data:** `readings`, `reading_attempts`, and `saved_words` carry a `user_id` (the Clerk user id) and every query is scoped to the current user; ownership violations return `404`. The CEFR level lives in a `user_profiles` table (`src/services/profile.ts`, `GET`/`PATCH /api/profile`), replacing the old `localStorage` value. `words_cache` and `images_cache` remain global (shared caches). Rate limiting is keyed by `userId`.
 

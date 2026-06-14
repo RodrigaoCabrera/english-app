@@ -9,21 +9,24 @@ export interface Profile {
 }
 
 export async function getOrCreateProfile(userId: string): Promise<Profile> {
-  const rows = await db
+  // Insert-first avoids a check-then-act race when a new user's first requests
+  // arrive in parallel. onConflictDoNothing returns [] if the row already exists.
+  const [created] = await db
+    .insert(userProfiles)
+    .values({ clerkUserId: userId })
+    .onConflictDoNothing()
+    .returning();
+
+  if (created) {
+    return { clerkUserId: userId, cefrLevel: created.cefrLevel as CefrLevel };
+  }
+
+  const [existing] = await db
     .select()
     .from(userProfiles)
     .where(eq(userProfiles.clerkUserId, userId))
     .limit(1);
-
-  if (rows.length > 0) {
-    return { clerkUserId: userId, cefrLevel: rows[0].cefrLevel as CefrLevel };
-  }
-
-  const [created] = await db
-    .insert(userProfiles)
-    .values({ clerkUserId: userId })
-    .returning();
-  return { clerkUserId: userId, cefrLevel: created.cefrLevel as CefrLevel };
+  return { clerkUserId: userId, cefrLevel: existing.cefrLevel as CefrLevel };
 }
 
 export async function updateLevel(userId: string, level: CefrLevel): Promise<Profile> {

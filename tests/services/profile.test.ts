@@ -18,6 +18,7 @@ const { dbMock } = vi.hoisted(() => {
     "set",
     "delete",
     "onConflictDoUpdate",
+    "onConflictDoNothing",
     "returning",
   ]) {
     chain[m] = vi.fn(() => chain);
@@ -34,13 +35,14 @@ describe("profile service", () => {
   });
 
   it("returns the existing level when a profile exists", async () => {
+    // Insert hits the conflict and returns [], then the select returns the row.
+    dbMock.returning.mockResolvedValueOnce([]);
     dbMock.limit.mockResolvedValueOnce([{ clerkUserId: "u1", cefrLevel: "C1" }]);
     const profile = await getOrCreateProfile("u1");
     expect(profile.cefrLevel).toBe("C1");
   });
 
   it("creates a B1 profile when none exists", async () => {
-    dbMock.limit.mockResolvedValueOnce([]);
     dbMock.returning.mockResolvedValueOnce([{ clerkUserId: "u1", cefrLevel: "B1" }]);
     const profile = await getOrCreateProfile("u1");
     expect(profile.cefrLevel).toBe("B1");
