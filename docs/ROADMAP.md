@@ -24,16 +24,16 @@ Phase numbering continues from the MVP (which was phases 1–4).
 
 ---
 
-## Phase 5 — Auth & Accounts  ·  Size: M  ·  Status: [~] next
+## Phase 5 — Auth & Accounts  ·  Size: M  ·  Status: [x] done
 
 **Goal:** turn the single-user demo into a multi-user app. Unblocks everything below.
 
-- [ ] Choose auth approach (Auth.js/NextAuth vs Clerk vs Lucia vs custom) — decide before coding
-- [ ] `users` table + session strategy
-- [ ] Sign up / sign in / sign out flows
-- [ ] Protect API routes; associate `readings` and `reading_attempts` with a user
-- [ ] Migrate the CEFR level from `localStorage` to the user profile
-- [ ] Move rate limiting from per-IP to per-user + a global daily cost cap
+- [x] Choose auth approach (Auth.js/NextAuth vs Clerk vs Lucia vs custom) — decide before coding
+- [x] `users` table + session strategy
+- [x] Sign up / sign in / sign out flows
+- [x] Protect API routes; associate `readings` and `reading_attempts` with a user
+- [x] Migrate the CEFR level from `localStorage` to the user profile
+- [x] Move rate limiting from per-IP to per-user + a global daily cost cap
 
 **Data model:** new `users`; add `user_id` FK to `readings`, `reading_attempts`,
 and (later) SRS tables.

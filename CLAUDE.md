@@ -30,6 +30,14 @@ Ollama configuration: if `OLLAMA_API_KEY` is set it connects to `https://ollama.
 
 Token usage for Ollama calls is tracked in-process by `src/lib/token-budget.ts` (daily rolling counter keyed by UTC date, throws when limits are exceeded).
 
+### Authentication (Clerk)
+
+Auth uses **Clerk** (`@clerk/nextjs` v7), OAuth social only (Google + GitHub; email/password disabled in the Clerk dashboard). `<ClerkProvider>` wraps the root layout and `src/proxy.ts` (Next.js 16 renamed the Middleware convention to **Proxy**) protects all routes except `/`, `/sign-in`, `/sign-up`, and static assets via `clerkMiddleware`. Server code reads the user via `getUserId()` in `src/lib/auth.ts` (wrapping Clerk's `auth()`); routes return `401` without a session.
+
+Access is restricted to an **allowlist**: the Clerk dashboard allowlist is the primary gate, with an optional code fallback (`ALLOWLIST_EMAILS` env, enforced in `src/proxy.ts`).
+
+**Per-user data:** `readings`, `reading_attempts`, and `saved_words` carry a `user_id` (the Clerk user id) and every query is scoped to the current user; ownership violations return `404`. The CEFR level lives in a `user_profiles` table (`src/services/profile.ts`, `GET`/`PATCH /api/profile`), replacing the old `localStorage` value. `words_cache` and `images_cache` remain global (shared caches). Rate limiting is keyed by `userId`.
+
 ### Features & Data Flow
 
 **Reading generation** (`POST /api/readings`):
@@ -88,4 +96,9 @@ OPENAI_API_KEY        # For word pronunciation audio (TTS)
 UNSPLASH_ACCESS_KEY   # For word illustrations (optional; degrades to no image)
 AZURE_SPEECH_KEY      # Azure Cognitive Services key
 AZURE_SPEECH_REGION   # e.g. eastus
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY   # Clerk publishable key (required)
+CLERK_SECRET_KEY                    # Clerk secret key (required)
+NEXT_PUBLIC_CLERK_SIGN_IN_URL       # /sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL       # /sign-up
+ALLOWLIST_EMAILS                    # Optional comma-separated allowlist fallback
 ```
