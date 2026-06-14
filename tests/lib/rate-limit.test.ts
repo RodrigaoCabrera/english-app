@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { rateLimit, clientKey, tooManyRequests } from "@/lib/rate-limit";
-import type { NextRequest } from "next/server";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 // Build a unique scope per test so the module-level store doesn't leak state.
 let counter = 0;
@@ -55,26 +54,6 @@ describe("rateLimit", () => {
     expect(rateLimit(a, opts).allowed).toBe(true);
     expect(rateLimit(b, opts).allowed).toBe(true);
     expect(rateLimit(a, opts).allowed).toBe(false);
-  });
-});
-
-describe("clientKey", () => {
-  function req(headers: Record<string, string>): NextRequest {
-    return { headers: new Headers(headers) } as unknown as NextRequest;
-  }
-
-  it("uses the first x-forwarded-for IP", () => {
-    expect(clientKey(req({ "x-forwarded-for": "1.2.3.4, 5.6.7.8" }), "s")).toBe(
-      "s:1.2.3.4"
-    );
-  });
-
-  it("falls back to x-real-ip", () => {
-    expect(clientKey(req({ "x-real-ip": "9.9.9.9" }), "s")).toBe("s:9.9.9.9");
-  });
-
-  it("falls back to 'unknown' when no IP header is present", () => {
-    expect(clientKey(req({}), "scope")).toBe("scope:unknown");
   });
 });
 

@@ -6,7 +6,7 @@
  * swap for Redis/Upstash if running multiple instances.
  */
 
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 interface WindowEntry {
   count: number;
@@ -66,19 +66,6 @@ export function rateLimit(
     resetAt: entry.resetAt,
     retryAfter: allowed ? 0 : Math.ceil((entry.resetAt - now) / 1000),
   };
-}
-
-/**
- * Best-effort client identifier from proxy headers, falling back to a
- * shared bucket when no IP is available (e.g. local dev).
- */
-export function clientKey(request: NextRequest, scope: string): string {
-  const fwd = request.headers.get("x-forwarded-for");
-  const ip =
-    fwd?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
-  return `${scope}:${ip}`;
 }
 
 /** Standard 429 response with a Retry-After header. */
