@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
 import { readings, readingAttempts } from "@/db/schema";
+import { getUserId } from "@/lib/auth";
 import { HoverableText } from "@/components/HoverableText";
 import { ReadingPractice } from "./ReadingPractice";
 import type { CefrLevel } from "@/lib/cefr";
@@ -35,8 +36,11 @@ export default async function ReadingDetailPage({ params }: Props) {
   const numId = parseInt(id, 10);
   if (isNaN(numId)) notFound();
 
+  const userId = await getUserId();
+  if (!userId) notFound();
+
   const [rows, attempts] = await Promise.all([
-    db.select().from(readings).where(eq(readings.id, numId)).limit(1),
+    db.select().from(readings).where(and(eq(readings.id, numId), eq(readings.userId, userId))).limit(1),
     db
       .select({
         id: readingAttempts.id,
@@ -44,7 +48,7 @@ export default async function ReadingDetailPage({ params }: Props) {
         createdAt: readingAttempts.createdAt,
       })
       .from(readingAttempts)
-      .where(eq(readingAttempts.readingId, numId))
+      .where(and(eq(readingAttempts.readingId, numId), eq(readingAttempts.userId, userId)))
       .orderBy(desc(readingAttempts.createdAt))
       .limit(5),
   ]);
