@@ -13,7 +13,6 @@ interface Reading {
   createdAt: string;
 }
 
-const LEVEL_KEY = "english-app:level";
 const UNDO_DURATION = 4000;
 
 type LevelColor = { dot: string; badge: string; border: string; glow: string };
@@ -69,10 +68,14 @@ export default function ReadingPage() {
 
   useEffect(() => {
     loadReadings();
-    const stored = localStorage.getItem(LEVEL_KEY) as CefrLevel | null;
-    if (stored && (CEFR_LEVELS as readonly string[]).includes(stored)) {
-      setLevel(stored);
-    }
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.success && (CEFR_LEVELS as readonly string[]).includes(j.data.level)) {
+          setLevel(j.data.level as CefrLevel);
+        }
+      })
+      .catch(() => {});
   }, [loadReadings]);
 
   useEffect(() => {
@@ -106,7 +109,11 @@ export default function ReadingPage() {
       });
       const json = await res.json();
       if (json.success) {
-        localStorage.setItem(LEVEL_KEY, level);
+        await fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ level }),
+        });
         router.push(`/reading/${json.data.id}`);
       } else {
         setGenerateError(json.error ?? "Generation failed");
