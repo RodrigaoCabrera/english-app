@@ -8,6 +8,7 @@ const RECENT_LIMIT = 5;
 export interface DashboardStats {
   readingsCount: number;
   savedWordsCount: number;
+  /** Average of each reading's best accuracy score. Null when the user has no pronunciation attempts. */
   avgAccuracyScore: number | null;
 }
 
@@ -68,7 +69,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       db
         .select({
           readingId: readingAttempts.readingId,
-          best: sql<number>`max((${readingAttempts.score} ->> 'accuracyScore')::float)`,
+          best: sql<number>`max(${accuracyExpr})`,
         })
         .from(readingAttempts)
         .where(and(eq(readingAttempts.userId, userId), isNotNull(readingAttempts.score)))
@@ -105,7 +106,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       topic: r.topic,
       level: r.level,
       createdAt: r.createdAt.toISOString(),
-      bestScore: bestByReading.has(r.id) ? Math.round(bestByReading.get(r.id)!) : null,
+      bestScore: bestByReading.has(r.id) ? Math.round(bestByReading.get(r.id) ?? 0) : null,
     })),
   };
 }

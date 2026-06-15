@@ -12,12 +12,6 @@ const { dbMock } = vi.hoisted(() => {
     "orderBy",
     "limit",
     "groupBy",
-    "values",
-    "insert",
-    "update",
-    "set",
-    "delete",
-    "returning",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
@@ -38,6 +32,14 @@ interface SetupArgs {
 // Queue results on each query's terminal method, in the order getDashboardData
 // issues them: readingsCount(.where), savedWordsCount(.where), recent(.limit),
 // trend(.limit), best(.groupBy).
+//
+// Queue order must match the query issue order in getDashboardData (dashboard.ts):
+// 1. readingsCount terminates at .where (1st Once)
+// 2. savedWordsCount terminates at .where (2nd Once)
+// 3. recentRows terminates at .limit (1st Once)
+// 4. trendRows terminates at .limit (2nd Once)
+// 5. bestRows terminates at .groupBy (1st Once)
+// If you reorder queries in dashboard.ts, update these queues accordingly.
 function setup(a: SetupArgs) {
   dbMock.where
     .mockResolvedValueOnce([{ value: a.readingsCount }])
