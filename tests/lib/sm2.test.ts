@@ -37,6 +37,15 @@ describe("schedule (SM-2)", () => {
     expect(schedule(fresh, "hard").easeFactor).toBeLessThan(250);
   });
 
+  it("'hard' on a mature card lowers EF and uses the updated EF for the interval", () => {
+    // rep=2, interval=6, EF=250; hard => EF=250-14=236; interval=round(6 * 236/100)=14
+    const mature: Sm2State = { easeFactor: 250, intervalDays: 6, repetitions: 2 };
+    const next = schedule(mature, "hard");
+    expect(next.easeFactor).toBe(236);
+    expect(next.intervalDays).toBe(14);
+    expect(next.repetitions).toBe(3);
+  });
+
   it("floors the ease factor at 130 (EF 1.30) under repeated 'again'", () => {
     let s = fresh;
     for (let i = 0; i < 20; i++) s = schedule(s, "again");

@@ -34,6 +34,8 @@ export function schedule(state: Sm2State, grade: Grade): Sm2State {
   let intervalDays: number;
   if (repetitions === 1) intervalDays = 1;
   else if (repetitions === 2) intervalDays = 6;
+  // Uses the updated EF (Anki-style), not the prior EF (strict SM-2 paper).
+  // Effect: 'hard' schedules slightly shorter than strict SM-2; 'easy' slightly longer.
   else intervalDays = Math.round(state.intervalDays * (easeFactor / 100));
 
   return { easeFactor, intervalDays, repetitions };
