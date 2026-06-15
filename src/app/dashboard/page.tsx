@@ -7,6 +7,7 @@ import {
   type TrendPoint,
   type RecentReading,
 } from "@/services/dashboard";
+import { getDueCount } from "@/services/srs";
 
 function levelDotClass(level: string): string {
   if (level === "A1" || level === "A2") return "bg-emerald-400";
@@ -117,11 +118,35 @@ function RecentReadings({ readings }: { readings: RecentReading[] }) {
   );
 }
 
+function DueReviewBanner({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <Link
+      href="/review"
+      className="flex items-center gap-4 rounded-lg border border-violet-500/40 bg-violet-500/10 p-4 transition-colors hover:border-violet-400/60"
+    >
+      <span className="text-2xl font-bold text-violet-300 leading-none">{count}</span>
+      <span className="flex-1">
+        <span className="block text-sm font-medium">
+          Word{count === 1 ? "" : "s"} due for review
+        </span>
+        <span className="block text-[11px] text-muted-foreground mt-0.5">
+          Keep your vocabulary fresh
+        </span>
+      </span>
+      <span className="text-sm font-semibold text-violet-300">Start review →</span>
+    </Link>
+  );
+}
+
 export default async function DashboardPage() {
   const userId = await getUserId();
   if (!userId) redirect("/sign-in");
 
-  const data: DashboardData = await getDashboardData(userId);
+  const [data, dueCount] = await Promise.all([
+    getDashboardData(userId),
+    getDueCount(userId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -129,6 +154,8 @@ export default async function DashboardPage() {
         <h1 className="font-serif text-2xl font-semibold tracking-tight">Progress</h1>
         <p className="text-muted-foreground text-sm mt-1">Your learning at a glance</p>
       </div>
+
+      <DueReviewBanner count={dueCount} />
 
       <div className="grid grid-cols-3 gap-2.5">
         <StatCard label="Readings" value={String(data.stats.readingsCount)} sub="passages" />

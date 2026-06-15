@@ -55,15 +55,15 @@ Phase numbering continues from the MVP (which was phases 1–4).
 
 ---
 
-## Phase 7 — SRS (Spaced Repetition for Vocabulary)  ·  Size: M  ·  Status: [~] in progress
+## Phase 7 — SRS (Spaced Repetition for Vocabulary)  ·  Size: M  ·  Status: [x] done
 
 **Goal:** the real learning engine — turn hovered words into reviewed words.
 
 - [x] `user_words` table: word, level, ease, interval, due_date, review history
 - [x] Capture words the user hovers/saves into their review queue
 - [x] SM-2 (or similar) scheduling algorithm
-- [ ] Review UI: flashcard-style session (definition ↔ word, with audio/image)
-- [ ] Daily "due for review" surfacing on the dashboard
+- [x] Review UI: flashcard-style session (definition ↔ word, with audio/image)
+- [x] Daily "due for review" surfacing on the dashboard
 
 **Depends on:** Phase 5. Reuses existing `words_cache` + image/audio infra.
 
