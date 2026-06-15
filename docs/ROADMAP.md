@@ -1,7 +1,7 @@
 # English App — Roadmap
 
 > Living document. Tracks the path from the delivered MVP to a full product.
-> Last updated: 2026-06-14.
+> Last updated: 2026-06-15.
 
 The MVP (phases 1–4) is complete: AI-generated **Reading** with hover
 definitions/translations/images/audio, **pronunciation assessment** (Azure),
@@ -55,13 +55,13 @@ Phase numbering continues from the MVP (which was phases 1–4).
 
 ---
 
-## Phase 7 — SRS (Spaced Repetition for Vocabulary)  ·  Size: M  ·  Status: [ ]
+## Phase 7 — SRS (Spaced Repetition for Vocabulary)  ·  Size: M  ·  Status: [~] in progress
 
 **Goal:** the real learning engine — turn hovered words into reviewed words.
 
-- [ ] `user_words` table: word, level, ease, interval, due_date, review history
-- [ ] Capture words the user hovers/saves into their review queue
-- [ ] SM-2 (or similar) scheduling algorithm
+- [x] `user_words` table: word, level, ease, interval, due_date, review history
+- [x] Capture words the user hovers/saves into their review queue
+- [x] SM-2 (or similar) scheduling algorithm
 - [ ] Review UI: flashcard-style session (definition ↔ word, with audio/image)
 - [ ] Daily "due for review" surfacing on the dashboard
 
