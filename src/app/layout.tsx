@@ -45,6 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Link href="/reading" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       Reading
                     </Link>
+                    <Link href="/review" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      Review
+                    </Link>
                     <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       Dashboard
                     </Link>
