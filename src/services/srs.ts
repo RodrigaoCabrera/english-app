@@ -73,8 +73,16 @@ export async function gradeWord(userId: string, word: string, grade: Grade): Pro
   });
 }
 
-/** Words due now (dueDate <= now), oldest-due first, joined to words_cache content. */
-export async function getDueWords(userId: string, limit = DEFAULT_DUE_LIMIT): Promise<DueWord[]> {
+/**
+ * Words due now (dueDate <= now), oldest-due first, joined to words_cache content.
+ * `now` is injectable so a caller can share one snapshot with getDueCount and
+ * keep the two queries' due-boundary identical.
+ */
+export async function getDueWords(
+  userId: string,
+  limit = DEFAULT_DUE_LIMIT,
+  now = new Date()
+): Promise<DueWord[]> {
   return db
     .select({
       word: userWords.word,
@@ -86,16 +94,16 @@ export async function getDueWords(userId: string, limit = DEFAULT_DUE_LIMIT): Pr
     })
     .from(userWords)
     .leftJoin(wordsCache, eq(userWords.word, wordsCache.word))
-    .where(and(eq(userWords.userId, userId), lte(userWords.dueDate, new Date())))
+    .where(and(eq(userWords.userId, userId), lte(userWords.dueDate, now)))
     .orderBy(userWords.dueDate)
     .limit(limit);
 }
 
-/** Count of words due now, for the dashboard badge (Part 2). */
-export async function getDueCount(userId: string): Promise<number> {
+/** Count of words due now, for the dashboard badge (Part 2). Share `now` with getDueWords. */
+export async function getDueCount(userId: string, now = new Date()): Promise<number> {
   const rows = await db
     .select({ value: count() })
     .from(userWords)
-    .where(and(eq(userWords.userId, userId), lte(userWords.dueDate, new Date())));
+    .where(and(eq(userWords.userId, userId), lte(userWords.dueDate, now)));
   return Number(rows[0]?.value ?? 0);
 }

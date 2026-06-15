@@ -18,9 +18,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Share one `now` snapshot so the count and the list use the same due boundary.
+    const now = new Date();
     const [words, dueCount] = await Promise.all([
-      getDueWords(userId, parsed.data.limit),
-      getDueCount(userId),
+      getDueWords(userId, parsed.data.limit, now),
+      getDueCount(userId, now),
     ]);
     return NextResponse.json({ success: true, data: { dueCount, words } });
   } catch (error) {

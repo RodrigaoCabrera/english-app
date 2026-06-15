@@ -51,6 +51,9 @@ describe("GET /api/srs/due", () => {
     expect(json.success).toBe(true);
     expect(json.data.dueCount).toBe(1);
     expect(json.data.words).toHaveLength(1);
-    expect(getDueWordsMock).toHaveBeenCalledWith("u1", 20);
+    // The route shares one `now` snapshot between getDueWords and getDueCount.
+    expect(getDueWordsMock).toHaveBeenCalledWith("u1", 20, expect.any(Date));
+    const sharedNow = getDueWordsMock.mock.calls[0][2];
+    expect(getDueCountMock).toHaveBeenCalledWith("u1", sharedNow);
   });
 });
