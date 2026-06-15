@@ -1,4 +1,4 @@
-import { pgTable, text, jsonb, integer, timestamp, serial, index } from "drizzle-orm/pg-core";
+import { pgTable, text, jsonb, integer, timestamp, serial, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const readings = pgTable(
   "readings",
@@ -75,3 +75,30 @@ export const userProfiles = pgTable("user_profiles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const userWords = pgTable(
+  "user_words",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    word: text("word").notNull(),
+    level: text("level").notNull(),
+
+    // SM-2 state
+    easeFactor: integer("ease_factor").notNull().default(250), // EF×100 (2.50)
+    intervalDays: integer("interval_days").notNull().default(0),
+    repetitions: integer("repetitions").notNull().default(0),
+    dueDate: timestamp("due_date").notNull().defaultNow(), // new words are due now
+
+    // counters / history-lite
+    reviewCount: integer("review_count").notNull().default(0),
+    lastReviewedAt: timestamp("last_reviewed_at"),
+    lastGrade: text("last_grade"), // 'again' | 'hard' | 'good' | 'easy'
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("user_words_user_word_idx").on(t.userId, t.word),
+    index("user_words_due_idx").on(t.userId, t.dueDate),
+  ]
+);
