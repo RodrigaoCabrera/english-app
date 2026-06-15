@@ -42,14 +42,14 @@ Phase numbering continues from the MVP (which was phases 1–4).
 
 ---
 
-## Phase 6 — Progress & Dashboard  ·  Size: M  ·  Status: [ ]
+## Phase 6 — Progress & Dashboard  ·  Size: M  ·  Status: [x] done
 
 **Goal:** give users a reason to come back — make learning visible.
 
-- [ ] Dashboard page: readings completed, pronunciation score trend over time
-- [ ] Per-reading attempt history (already stored in `reading_attempts`, surface it)
-- [ ] "Words encountered / learned" counters
-- [ ] Streaks / activity calendar (optional)
+- [x] Dashboard page: readings completed, pronunciation score trend over time
+- [x] Per-reading attempt history (best score surfaced on the dashboard list)
+- [x] "Words saved" counter
+- [ ] Streaks / activity calendar (optional — deferred)
 
 **Depends on:** Phase 5 (needs a user to attribute progress to).
 
