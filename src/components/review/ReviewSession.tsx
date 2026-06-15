@@ -95,7 +95,7 @@ export function ReviewSession({ initialWords }: Props) {
     return (
       <div className="rounded-lg border border-border/50 bg-card/60 p-8 text-center space-y-3">
         <p className="text-lg font-semibold">
-          Reviewed {total} word{total === 1 ? "" : "s"} 🎉
+          Reviewed {total} word{total === 1 ? "" : "s"}. Nice work!
         </p>
         <Link
           href="/dashboard"
@@ -118,6 +118,7 @@ export function ReviewSession({ initialWords }: Props) {
         <GradeButtons onGrade={handleGrade} disabled={submitting} />
       ) : (
         <button
+          type="button"
           onClick={reveal}
           className="cursor-pointer w-full rounded-md border border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >

@@ -47,6 +47,7 @@ export function Flashcard({ card, revealed, onReveal }: Props) {
       <div className="flex items-center justify-center gap-3">
         <p className="text-3xl font-semibold capitalize">{card.word}</p>
         <button
+          type="button"
           onClick={playAudio}
           aria-label="Play pronunciation"
           className="cursor-pointer rounded border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"

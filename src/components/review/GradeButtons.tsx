@@ -20,6 +20,7 @@ export function GradeButtons({ onGrade, disabled = false }: Props) {
       {GRADES.map(({ grade, label, hint }) => (
         <button
           key={grade}
+          type="button"
           onClick={() => onGrade(grade)}
           disabled={disabled}
           className="cursor-pointer rounded-md border border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-foreground/40 disabled:opacity-40 disabled:cursor-not-allowed"
