@@ -78,7 +78,9 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
 
   // best score per reading id (only readings that have at least one attempt)
   const bestByReading = new Map<number, number>();
-  for (const row of bestRows) bestByReading.set(row.readingId, Number(row.best));
+  for (const row of bestRows) {
+    if (row.best != null) bestByReading.set(row.readingId, Number(row.best));
+  }
 
   const bestValues = Array.from(bestByReading.values());
   const avgAccuracyScore =
@@ -94,6 +96,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     },
     // DB returns newest-first; reverse to oldest-first so the chart reads left→right.
     pronunciationTrend: trendRows
+      .filter((r) => r.accuracyScore != null)
       .map((r) => ({
         attemptId: r.attemptId,
         readingTopic: r.readingTopic,

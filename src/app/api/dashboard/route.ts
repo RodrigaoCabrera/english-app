@@ -8,6 +8,11 @@ export async function GET() {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const data = await getDashboardData(userId);
-  return NextResponse.json({ success: true, data });
+  try {
+    const data = await getDashboardData(userId);
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error("[dashboard] getDashboardData error:", error);
+    return NextResponse.json({ success: false, error: "Failed to load dashboard data." }, { status: 500 });
+  }
 }
