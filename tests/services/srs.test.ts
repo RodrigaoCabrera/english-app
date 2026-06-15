@@ -4,12 +4,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const { dbMock } = vi.hoisted(() => {
   const chain: Record<string, ReturnType<typeof vi.fn>> = {};
   for (const m of [
-    "select", "from", "where", "leftJoin", "orderBy", "limit",
+    "select", "from", "where", "leftJoin", "orderBy", "limit", "for",
     "insert", "values", "onConflictDoNothing",
     "update", "set",
   ]) {
     chain[m] = vi.fn(() => chain);
   }
+  chain.transaction = vi.fn((cb: (tx: typeof chain) => unknown) => cb(chain));
   return { dbMock: chain };
 });
 vi.mock("@/db", () => ({ db: dbMock }));
@@ -48,6 +49,7 @@ describe("gradeWord", () => {
     expect(setArg.reviewCount).toBe(1);
     expect(setArg.lastGrade).toBe("good");
     expect(setArg.dueDate).toBeInstanceOf(Date);
+    expect(setArg.easeFactor).toBe(250); // 'good' (q=4) leaves EF unchanged
   });
 });
 
