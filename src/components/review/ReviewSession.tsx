@@ -42,6 +42,7 @@ export function ReviewSession({ initialWords }: Props) {
         });
         // 404 = the word is no longer in the queue; treat as handled and move on.
         if (!res.ok && res.status !== 404) {
+          // Stay on the revealed card so the user can retry the same grade.
           setError("Could not save your review. Try again.");
           return;
         }

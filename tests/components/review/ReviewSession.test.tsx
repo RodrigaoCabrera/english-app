@@ -77,4 +77,23 @@ describe("ReviewSession", () => {
     fireEvent.click(screen.getByRole("button", { name: /good/i }));
     expect(await screen.findByText("2 / 2")).toBeInTheDocument();
   });
+
+  it("keyboard shortcut Space reveals the card and Digit3 grades good and advances", async () => {
+    render(<ReviewSession initialWords={[card("alpha"), card("beta")]} />);
+    // Before reveal, grade buttons should not be present
+    expect(screen.queryByRole("button", { name: /good/i })).not.toBeInTheDocument();
+    // Press Space to reveal
+    fireEvent.keyDown(window, { code: "Space" });
+    expect(screen.getByRole("button", { name: /good/i })).toBeInTheDocument();
+    // Press Digit3 to grade "good"
+    fireEvent.keyDown(window, { code: "Digit3" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/srs/review",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ word: "alpha", grade: "good" }),
+      })
+    );
+    expect(await screen.findByText("2 / 2")).toBeInTheDocument();
+  });
 });
